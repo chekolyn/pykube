@@ -1,4 +1,5 @@
 from six.moves import zip_longest
+import posixpath
 
 
 empty = object()
@@ -37,3 +38,41 @@ def obj_check(a, b):
         else:
             c = a
     return c
+
+def get_kwargs(self, **kwargs):
+    """
+    Creates a full URL to request based on arguments.
+
+    :Parametes:
+       - `kwargs`: All keyword arguments to build a kubernetes API endpoint
+    """
+    url = ""
+    version = kwargs.pop("version", "v1")
+    if version == "v1":
+        base = kwargs.pop("base", "/api")
+    elif "/" in version:
+        base = kwargs.pop("base", "/apis")
+    else:
+        if "base" not in kwargs:
+            raise TypeError("unknown API version; base kwarg must be specified.")
+        base = kwargs.pop("base")
+    bits = [base, version]
+    # Overwrite (default) namespace from context if it was set
+    if "namespace" in kwargs:
+        n = kwargs.pop("namespace")
+        if n is not None:
+            if n:
+                namespace = n
+            else:
+                namespace = self.config.namespace
+            if namespace:
+                bits.extend([
+                    "namespaces",
+                    namespace,
+                ])
+    url = kwargs.get("url", "")
+    if url.startswith("/"):
+        url = url[1:]
+    bits.append(url)
+    kwargs["url"] = self.url + posixpath.join(*bits)
+    return kwargs

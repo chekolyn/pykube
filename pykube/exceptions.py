@@ -25,3 +25,8 @@ class HTTPError(PyKubeError):
 
 class ObjectDoesNotExist(PyKubeError):
     pass
+
+class WSError(PyKubeError):
+    def __init__(self, code, message):
+        super(WSError, self).__init__(message)
+        self.code = code

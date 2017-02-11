@@ -5,6 +5,7 @@ from inspect import getmro
 import six
 
 from six.moves.urllib.parse import urlencode
+from six.moves.urllib.parse import quote_plus
 from .exceptions import ObjectDoesNotExist
 from .mixins import ReplicatedMixin, ScalableMixin
 from .query import Query
@@ -292,6 +293,41 @@ class Pod(NamespacedAPIObject):
         r.raise_for_status()
         return r.text
 
+    def execute(self, stdin=False, stdout=False, stderr=False, tty=False
+                , container=None, command=None, trace=False):
+
+        execute_call = "exec"
+        params = {}
+
+        params["stdin"] = stdin
+        params["stdout"] = stdout
+        params["stderr"] = stderr
+        params["tty"] = tty
+        if container is not None:
+            params["container"] = container
+
+        #Handle command parameter outside of urlencode:
+        expand_cmds = ''
+        if command is not None:
+            if isinstance(command, list):
+                for cmd in command:
+                    expand_cmds += "&command=%s&" % quote_plus(cmd)
+            else:
+                #TODO review string command expansion:
+                expand_cmds = "&command=%s&" % command.strip().replace(" ", "&command=")
+
+        query_string = urlencode(params) + expand_cmds
+        execute_call += "?{}".format(query_string) if query_string else ""
+        kwargs = {
+            "version": self.version,
+            "namespace": self.namespace,
+            "operation": execute_call,
+        }
+
+        print execute_call
+
+        execute_response = self.api.ws.get(trace=trace, **self.api_kwargs(**kwargs))
+        return execute_response
 
 class ReplicationController(NamespacedAPIObject, ReplicatedMixin, ScalableMixin):
 

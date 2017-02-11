@@ -8,6 +8,7 @@ import re
 from six.moves.urllib.parse import urlparse
 
 from .session import build_session
+from .ws import WSClient
 from .exceptions import HTTPError
 
 
@@ -20,6 +21,7 @@ class HTTPClient(object):
     """
 
     _session = None
+    _ws = None
 
     def __init__(self, config, gcloud_file=None):
         """
@@ -56,6 +58,15 @@ class HTTPClient(object):
         response = self.get('/version')
         data = response.json()
         return (data['major'], data['minor'])
+
+    #TODO revisit if ws should be a property
+    #when we init http; we will trigger an invalid ws connection
+    #to self.config.cluster["server"] via WSClient init and on_open
+    @property
+    def ws(self, *args, **kwargs):
+        if not self._ws:
+            self._ws = WSClient(session=self.session, url=self.url)
+        return self._ws
 
     def get_kwargs(self, **kwargs):
         """
@@ -185,3 +196,9 @@ class HTTPClient(object):
            - `kwargs`: Keyword arguments
         """
         return self.session.delete(*args, **self.get_kwargs(**kwargs))
+    #
+    # def ws_get(self, *args, **kwargs):
+    #     #ws_output = WSClient(session=self.session, trace=False)
+    #
+    #     #return ws_output.get(*args, **self.get_kwargs(**kwargs))
+    #     return self.ws.get(*args, **self.get_kwargs(**kwargs))
