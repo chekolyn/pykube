@@ -80,6 +80,4 @@ class WSClient(object):
                 reason='\n'.join([str(error) for error in client.errors])
             )
 
-            print client.errors
-
         return client.messages

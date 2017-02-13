@@ -324,8 +324,6 @@ class Pod(NamespacedAPIObject):
             "operation": execute_call,
         }
 
-        print execute_call
-
         execute_response = self.api.ws.get(trace=trace, **self.api_kwargs(**kwargs))
         return execute_response
 
